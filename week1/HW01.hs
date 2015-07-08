@@ -5,29 +5,32 @@ module HW01 where
 
 -- Get the last digit from a number
 lastDigit :: Integer -> Integer
-lastDigit = undefined
+lastDigit x = x `mod` 10
 
 -- Drop the last digit from a number
 dropLastDigit :: Integer -> Integer
-dropLastDigit = undefined
+dropLastDigit x = x `div` 10
 
 -- Exercise 2 -----------------------------------------
 
 toRevDigits :: Integer -> [Integer]
-toRevDigits = undefined
+toRevDigits 0 = []
+toRevDigits x = lastDigit x : toRevDigits (dropLastDigit x) 
 
 -- Exercise 3 -----------------------------------------
 
 -- Double every second number in a list starting on the left.
 doubleEveryOther :: [Integer] -> [Integer]
-doubleEveryOther = undefined
+doubleEveryOther [] = []
+doubleEveryOther (x:[]) = [x]
+doubleEveryOther (x:(y:zs)) = x : (y + y) : doubleEveryOther zs
 
 -- Exercise 4 -----------------------------------------
 
 -- Calculate the sum of all the digits in every Integer.
 sumDigits :: [Integer] -> Integer
-sumDigits = undefined
-
+sumDigits [] = 0
+sumDigits (x:zs) = x + sumDigits zs
 
 -- Exercise 5 -----------------------------------------
 
