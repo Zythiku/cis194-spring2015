@@ -14,6 +14,7 @@ ex1Tests :: [Test]
 ex1Tests = [ testF2 "exactMatches test" exactMatches
              [ ([Red, Blue, Green, Yellow], [Blue, Green, Yellow, Red], 0)
              , ([Red, Blue, Green, Yellow], [Red, Purple, Green, Orange], 2)
+             , ([Red, Blue, Green, Yellow], [Red, Purple, Green, Yellow], 3)
              ]
            ]
 
@@ -51,7 +52,15 @@ ex4Tests = [ testF2 "isConsistent test" isConsistent
 -- Exercise 5 -----------------------------------------
 
 ex5Tests :: [Test]
-ex5Tests = []
+ex5Tests = [ testF2 "filterCodes test" filterCodes
+             [ (Move [Red, Red, Blue, Green] 1 1, [[Red, Blue, Yellow, Purple], [Red, Blue, Red, Purple]],
+               [[Red, Blue, Yellow, Purple]])
+             , (Move [Red, Red, Blue, Green] 1 1, [[Red, Blue, Red, Purple]],
+               [])
+             ]
+           ]
+
+
 
 -- Exercise 6 -----------------------------------------
 
