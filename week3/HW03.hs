@@ -34,15 +34,32 @@ type State = String -> Int
 -- Exercise 1 -----------------------------------------
 
 extend :: State -> String -> Int -> State
-extend = undefined
+extend state var val = newState state var val
+    where newState oldState assignedVar assignedVal checkVar
+            | assignedVar == checkVar = assignedVal 
+            | otherwise = oldState checkVar
 
 empty :: State
-empty = undefined
+empty = state
+    where state _ = 0
 
 -- Exercise 2 -----------------------------------------
 
 evalE :: State -> Expression -> Int
-evalE = undefined
+evalE state (Var str) = state str
+evalE state (Val int) = int
+evalE state (Op exp bop exp2)
+    | bop == Plus = (evalE state exp) + (evalE state exp2)
+    | bop == Minus = (evalE state exp) - (evalE state exp2)
+    | bop == Times = (evalE state exp) * (evalE state exp2)
+    | bop == Divide = (evalE state exp) `div` (evalE state exp2)
+    | bop == Gt && (evalE state exp) > (evalE state exp2) = 1
+    | bop == Ge && (evalE state exp) >= (evalE state exp2) = 1
+    | bop == Lt && (evalE state exp) < (evalE state exp2) = 1
+    | bop == Le && (evalE state exp) <= (evalE state exp2) = 1
+    | bop == Eql && (evalE state exp) == (evalE state exp2) = 1
+    | otherwise = 0
+    
 
 -- Exercise 3 -----------------------------------------
 
@@ -54,16 +71,29 @@ data DietStatement = DAssign String Expression
                      deriving (Show, Eq)
 
 desugar :: Statement -> DietStatement
-desugar = undefined
-
+desugar (Assign var exp) = (DAssign var exp)
+desugar (Incr var) = (DAssign var (Op (Var var) Plus (Val 1)))
+desugar (If condition true false) = (DIf condition (desugar true) (desugar false))
+desugar (While condition loop) = (DWhile condition (desugar loop))
+desugar (For init condition update loop) = (DSequence (desugar init) (DWhile condition (DSequence (desugar loop) (desugar update))))
+desugar (Sequence stmnt1 stmnt2) = (DSequence (desugar stmnt1) (desugar stmnt2))
+desugar (Skip) = DSkip
 
 -- Exercise 4 -----------------------------------------
 
 evalSimple :: State -> DietStatement -> State
-evalSimple = undefined
+evalSimple state (DAssign var exp) = extend state var (evalE state exp)
+evalSimple state (DIf condition true false)
+    | (evalE state condition) == 1 = evalSimple state true
+    | otherwise = evalSimple state false
+evalSimple state (DWhile condition loop)
+    | (evalE state condition == 1) = evalSimple (evalSimple state loop) (DWhile condition loop)
+    | otherwise = state
+evalSimple state (DSequence stmnt1 stmnt2) = (evalSimple (evalSimple state stmnt1) stmnt2)
+evalSimple state (DSkip) = state
 
 run :: State -> Statement -> State
-run = undefined
+run state stmnt = evalSimple state (desugar stmnt)
 
 -- Programs -------------------------------------------
 
