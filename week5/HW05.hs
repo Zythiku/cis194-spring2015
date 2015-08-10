@@ -7,19 +7,26 @@ import Data.Map.Strict (Map)
 import System.Environment (getArgs)
 
 import qualified Data.ByteString.Lazy as BS
-import qualified Data.Map.Strict as Map
+import Data.Bits
 
 import Parser
 
 -- Exercise 1 -----------------------------------------
 
 getSecret :: FilePath -> FilePath -> IO ByteString
-getSecret = undefined
+getSecret orig modified = do
+    origFile <- BS.readFile orig
+    modFile <- BS.readFile modified
+    return . BS.pack . filter (/=0) $ BS.zipWith xor origFile modFile
+
 
 -- Exercise 2 -----------------------------------------
 
 decryptWithKey :: ByteString -> FilePath -> IO ()
-decryptWithKey = undefined
+decryptWithKey key file = do
+    encFile <- BS.readFile (file ++ ".enc")
+    let decFile = zipWith xor (BS.unpack encFile) (cycle $ BS.unpack key)
+    BS.writeFile (file) $ BS.pack decFile
 
 -- Exercise 3 -----------------------------------------
 
