@@ -10,6 +10,7 @@ import qualified Data.ByteString.Lazy as BS
 import Data.Bits
 
 import Parser
+import Data.Maybe
 
 -- Exercise 1 -----------------------------------------
 
@@ -31,12 +32,24 @@ decryptWithKey key file = do
 -- Exercise 3 -----------------------------------------
 
 parseFile :: FromJSON a => FilePath -> IO (Maybe a)
-parseFile = undefined
+parseFile filePath = do
+    file <- BS.readFile filePath
+    return $ decode file
 
 -- Exercise 4 -----------------------------------------
+intersectBy'             :: (a -> b -> Bool) -> [a] -> [b] -> [a]
+intersectBy' _  [] _     =  []
+intersectBy' _  _  []    =  []
+intersectBy' eq xs ys    =  [x | x <- xs, any (eq x) ys]
 
 getBadTs :: FilePath -> FilePath -> IO (Maybe [Transaction])
-getBadTs = undefined
+getBadTs victimPath transPath = do
+    victims <- parseFile victimPath
+    trans <- parseFile transPath
+    let badTrans = intersectBy' ((==) . tid) (fromMaybe [] trans) (fromMaybe [] victims)
+    if badTrans == []
+    then return Nothing
+    else return $ Just badTrans
 
 -- Exercise 5 -----------------------------------------
 
