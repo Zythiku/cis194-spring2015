@@ -12,6 +12,8 @@ import Data.Bits
 
 import Parser
 import Data.Maybe
+import Data.Foldable
+import Data.Ord
 
 -- Exercise 1 -----------------------------------------
 
@@ -46,29 +48,42 @@ intersectBy' eq xs ys    =  [x | x <- xs, any (eq x) ys]
 getBadTs :: FilePath -> FilePath -> IO (Maybe [Transaction])
 getBadTs victimPath transPath = do
     victims <- parseFile victimPath
-    trans <- parseFile transPath
+    trans <- parseFile transPath 
     let badTrans = intersectBy' ((==) . tid) (fromMaybe [] trans) (fromMaybe [] victims)
     if badTrans == []
-    then return Nothing
+    then return $ Just badTrans
     else return $ Just badTrans
 
 -- Exercise 5 -----------------------------------------
 
 getFlow :: [Transaction] -> Map String Integer
 getFlow transactions = getFlow' Map.empty transactions
-    where getFlow' map (tran:trans) = getFlow' (Map.insertWith (+) (to tran) (amount tran) (Map.insertWith (+) (from tran) (negate (amount tran)) map)) trans
-          getFlow' map _ = map
+    where getFlow' m (tran:trans) = getFlow' 
+                (Map.insertWith (+) (to tran) (amount tran) 
+                (Map.insertWith (+) (from tran) (negate (amount tran)) m)) 
+                trans
+          getFlow' m _ = m
 
 
 -- Exercise 6 -----------------------------------------
 
 getCriminal :: Map String Integer -> String
-getCriminal = undefined
+getCriminal = fst . maximumBy (comparing snd) . Map.toList
 
 -- Exercise 7 -----------------------------------------
 
 undoTs :: Map String Integer -> [TId] -> [Transaction]
-undoTs = undefined
+undoTs m ids =
+    let payers = filter ((>0) . snd) $ Map.toList m
+        payees = filter ((<0) . snd) $ Map.toList m
+    in undoTs' payers payees ids []
+    where undoTs' payers@(r:rs) payees@(e:es) newIds(d:ds) trans
+            | (snd r) == 0 = undoTs' rs payees newIds trans
+            | (snd r) > (snd e) = undoTs' ((fst r, rAmount) : rs) es ds trans 
+            | (snd r) < (snd e) = undoTs' rs ((fst e, eAmount) : es) ds trans 
+            where eAmount = (snd e) - (snd r)
+                  rAmount = (snd r) + (snd e)
+          undoTs' _ _ _ trans = trans
 
 -- Exercise 8 -----------------------------------------
 
