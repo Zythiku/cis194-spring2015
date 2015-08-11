@@ -7,6 +7,7 @@ import Data.Map.Strict (Map)
 import System.Environment (getArgs)
 
 import qualified Data.ByteString.Lazy as BS
+import qualified Data.Map.Strict as Map
 import Data.Bits
 
 import Parser
@@ -54,7 +55,10 @@ getBadTs victimPath transPath = do
 -- Exercise 5 -----------------------------------------
 
 getFlow :: [Transaction] -> Map String Integer
-getFlow = undefined
+getFlow transactions = getFlow' Map.empty transactions
+    where getFlow' map (tran:trans) = getFlow' (Map.insertWith (+) (to tran) (amount tran) (Map.insertWith (+) (from tran) (negate (amount tran)) map)) trans
+          getFlow' map _ = map
+
 
 -- Exercise 6 -----------------------------------------
 
