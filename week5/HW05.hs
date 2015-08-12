@@ -14,6 +14,7 @@ import Parser
 import Data.Maybe
 import Data.Foldable
 import Data.Ord
+import Data.List
 
 -- Exercise 1 -----------------------------------------
 
@@ -74,21 +75,24 @@ getCriminal = fst . maximumBy (comparing snd) . Map.toList
 
 undoTs :: Map String Integer -> [TId] -> [Transaction]
 undoTs m ids =
-    let payers = filter ((>0) . snd) $ Map.toList m
-        payees = filter ((<0) . snd) $ Map.toList m
+    let payers = sortBy (comparing snd) $ filter ((>0) . snd) $ Map.toList m
+        payees = sortBy (comparing snd) $ filter ((<0) . snd) $ Map.toList m
     in undoTs' payers payees ids []
-    where undoTs' payers@(r:rs) payees@(e:es) newIds(d:ds) trans
-            | (snd r) == 0 = undoTs' rs payees newIds trans
-            | (snd r) > (snd e) = undoTs' ((fst r, rAmount) : rs) es ds trans 
-            | (snd r) < (snd e) = undoTs' rs ((fst e, eAmount) : es) ds trans 
-            where eAmount = (snd e) - (snd r)
-                  rAmount = (snd r) + (snd e)
+    where undoTs' (r:rs) (e:es) (d:ds) trans
+            | (snd r) == (snd e) = undoTs' rs es ds (tran : trans)
+            | (snd r) < (snd e) = undoTs' rs (updatedE : es) ds (tran : trans)
+            | (snd r) > (snd e) = undoTs' (updatedR : rs) es ds (tran : trans)
+            where amnt = negate $ min (snd e) (snd r)
+                  tran = Transaction {from=(fst r), to=(fst e), amount=amnt, tid=d}
+                  updatedE = (fst e, (snd e) - amnt)
+                  updatedR = (fst r, (snd r) + amnt)
           undoTs' _ _ _ trans = trans
 
 -- Exercise 8 -----------------------------------------
 
 writeJSON :: ToJSON a => FilePath -> a -> IO ()
-writeJSON = undefined
+writeJSON filePath a = do
+    BS.writeFile filePath (encode a)
 
 -- Exercise 9 -----------------------------------------
 
