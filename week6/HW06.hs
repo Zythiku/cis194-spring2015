@@ -66,10 +66,10 @@ ruler = ruler' 0
 
 -- | Implementation of C rand
 rand :: Int -> Stream Int
-rand num
-    | num >= 1 = Cons randomNum (rand (num + 1))
-    | otherwise = rand 1
-    where randomNum = (1103515245 * (num - 1) + 12345) `mod` 2147483648
+rand num  = sIterate randomNum num
+    where randomNum n
+            | n >= 1 = (1103515245 * n + 12345) `mod` 2147483648
+            | otherwise = randomNum 1
 
 
 -- Exercise 8 -----------------------------------------
@@ -88,6 +88,16 @@ minMax (x:xs) = Just (minMax' (x, x) xs)
     where minMax' (low, high) (y:ys) = low `seq` high `seq` minMax' (min y (low), max y (high)) ys
           minMax' pair _ = pair
 
+{- Total Memory in use: 1 MB
+    half copied during gc -}
+minMax2 :: [Int] -> Maybe (Int, Int)
+minMax2 [] = Nothing
+minMax2 (x:xs) = Just (minMax' (x, x) xs)
+    where minMax' (low, high) (y:ys) = lowest `seq` highest `seq` minMax' (lowest, highest) ys
+            where lowest = min y low
+                  highest = max y high
+          minMax' pair _ = pair
+
 {- Total Memory in use: 212 MB -}
 minMaxFold :: [Int] -> Maybe (Int, Int)
 minMaxFold [] = Nothing
@@ -101,7 +111,7 @@ minMaxFoldr(x:xs) = Just (foldr (\num (low, high) -> (min low num, max high num)
     where base = (x, x)
 
 main :: IO ()
-main = print $ minMaxFold $ sTake 1000000 $ rand 7666532
+main = print $ minMax $ sTake 1000000 $ rand 7666532
 
 -- Exercise 10 ----------------------------------------
 
