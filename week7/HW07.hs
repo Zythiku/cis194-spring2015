@@ -18,43 +18,61 @@ import qualified Data.Vector as V
 -- Exercise 1 -----------------------------------------
 
 liftM :: Monad m => (a -> b) -> m a -> m b
-liftM = undefined
+liftM f ma = do
+    a <- ma
+    return $ f a
 
 swapV :: Int -> Int -> Vector a -> Maybe (Vector a)
-swapV = undefined
+swapV i1 i2 v = liftM2 swapV' (v !? i1) (v !? i2)
+    where swapV' v1 v2 = v // [(i1, v2), (i2, v1)]
+
 
 -- Exercise 2 -----------------------------------------
 
 mapM :: Monad m => (a -> m b) -> [a] -> m [b]
-mapM = undefined
+mapM f = sequence . map f
 
 getElts :: [Int] -> Vector a -> Maybe [a]
-getElts = undefined
+getElts is v = mapM (v !?) is
 
 -- Exercise 3 -----------------------------------------
 
 type Rnd a = Rand StdGen a
 
 randomElt :: Vector a -> Rnd (Maybe a)
-randomElt = undefined
+randomElt v
+    | V.length v == 0 = return Nothing
+    | otherwise = (v !?) <$> getRandomR (0, V.length v - 1)
 
 -- Exercise 4 -----------------------------------------
 
 randomVec :: Random a => Int -> Rnd (Vector a)
-randomVec = undefined
+randomVec n = V.replicateM n getRandom
 
 randomVecR :: Random a => Int -> (a, a) -> Rnd (Vector a)
-randomVecR = undefined
+randomVecR n r = V.replicateM n (getRandomR r)
 
 -- Exercise 5 -----------------------------------------
 
+shuffle' :: Int -> Vector a -> Rnd (Vector a)
+shuffle' i v
+    | i < 0 = return v
+    | otherwise = (swap <$> randomRange) >>= shuffle' (i - 1)
+    where randomRange = getRandomR (0, i)
+          swap j = v // [(i, v ! j), (j, v ! i)]
+
 shuffle :: Vector a -> Rnd (Vector a)
-shuffle = undefined
+shuffle v
+    | V.length v == 0 = return v
+    | otherwise = shuffle' (V.length v - 1) v
 
 -- Exercise 6 -----------------------------------------
 
 partitionAt :: Ord a => Vector a -> Int -> (Vector a, a, Vector a)
-partitionAt = undefined
+partitionAt v p = (h, n, t)
+    where n = v ! p
+          h = V.ifilter (\i x -> i /= p && x < n) v
+          t = V.ifilter (\i x -> i /= p && x >= n) v
 
 -- Exercise 7 -----------------------------------------
 
@@ -65,12 +83,28 @@ quicksort (x:xs) = quicksort [ y | y <- xs, y < x ]
                    <> (x : quicksort [ y | y <- xs, y >= x ])
 
 qsort :: Ord a => Vector a -> Vector a
-qsort = undefined
+qsort v
+    | V.length v == 0 = V.empty
+    | otherwise = qsort h <> (V.cons n $ qsort t)
+    where (h, n, t) = partitionAt v 0
 
 -- Exercise 8 -----------------------------------------
 
+--Much slower than qSort'--
 qsortR :: Ord a => Vector a -> Rnd (Vector a)
-qsortR = undefined
+qsortR v = (\(h, n, t) -> qsort h <> V.cons n (qsort t)) <$> (partitionAt v) <$> randomI
+    where randomI = getRandomR (0, V.length v - 1)
+
+qsortR' :: Ord a => Vector a -> Rnd (Vector a)
+qsortR' v
+    | V.length v == 0 = return V.empty
+    | otherwise = do
+            i <- getRandomR(0, V.length v - 1)
+            let (h, n, t) = partitionAt v i
+            hSorted <- qsortR' h
+            tSorted <- qsortR' t
+            return $ hSorted <> V.cons n tSorted
+
 
 -- Exercise 9 -----------------------------------------
 
@@ -138,7 +172,7 @@ repl s@State{..} | money <= 0  = putStrLn "You ran out of money!"
                   _ | c13 > c23 -> repl $ State (m + amt) d'
                     | c13 < c23 -> repl $ State (m - amt) d'
                     | otherwise -> war (State m d') amt
-              _ -> deckEmpty 
+              _ -> deckEmpty
 
 main :: IO ()
 main = evalRandIO newDeck >>= repl . State 100
