@@ -99,8 +99,8 @@ qsortR' :: Ord a => Vector a -> Rnd (Vector a)
 qsortR' v
     | V.length v == 0 = return V.empty
     | otherwise = do
-            i <- getRandomR(0, V.length v - 1)
-            let (h, n, t) = partitionAt v i
+            p <- getRandomR(0, V.length v - 1)
+            let (h, n, t) = partitionAt v p
             hSorted <- qsortR' h
             tSorted <- qsortR' t
             return $ hSorted <> V.cons n tSorted
@@ -110,25 +110,41 @@ qsortR' v
 
 -- Selection
 select :: Ord a => Int -> Vector a -> Rnd (Maybe a)
-select = undefined
+select i v =
+    do
+        rand <- getRandomR(0, V.length v - 1)
+        let (l, p, r) = partitionAt v rand
+        if i < V.length l
+            then select i l
+            else if i == V.length l
+                then return $ Just p
+                else if i < V.length r
+                    then select (i - V.length l) r
+                    else
+                        return Nothing
+
 
 -- Exercise 10 ----------------------------------------
 
 allCards :: Deck
-allCards = undefined
+allCards = [ Card l s | s <- Cards.suits, l <- Cards.labels]
 
 newDeck :: Rnd Deck
-newDeck =  undefined
+newDeck =  shuffle allCards
 
 -- Exercise 11 ----------------------------------------
 
 nextCard :: Deck -> Maybe (Card, Deck)
-nextCard = undefined
+nextCard d
+    | V.length d == 0 = Nothing
+    | otherwise = Just (V.head d, V.tail d)
 
 -- Exercise 12 ----------------------------------------
 
 getCards :: Int -> Deck -> Maybe ([Card], Deck)
-getCards = undefined
+getCards n d
+    | V.length d < n = Nothing
+    | otherwise = Just (V.toList $ V.take n d, V.drop n d)
 
 -- Exercise 13 ----------------------------------------
 
